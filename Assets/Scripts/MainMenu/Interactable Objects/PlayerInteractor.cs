@@ -5,18 +5,20 @@ namespace Gidigbo.Interaction
 {
     public class PlayerInteractor : MonoBehaviour
     {
-        [Header("Raycast Settings")]
-        [SerializeField] private float interactionRange = 3.0f;
+        [Header("Default Settings")]
+        [SerializeField] private float defaultInteractionRange = 4.0f;
         [SerializeField] private LayerMask interactableLayer;
 
         private Camera _cam;
         private IInteractable _currentInteractable;
         private IInteractable _lastInteractable;
+        private float _currentActiveRange;
 
         private void Awake()
         {
             _cam = GetComponent<Camera>();
             if (_cam == null) _cam = Camera.main;
+            _currentActiveRange = defaultInteractionRange;
         }
 
         private void Update()
@@ -30,12 +32,18 @@ namespace Gidigbo.Interaction
             Ray ray = new Ray(_cam.transform.position, _cam.transform.forward);
             _lastInteractable = _currentInteractable;
             _currentInteractable = null;
+            _currentActiveRange = defaultInteractionRange;
 
-            if (Physics.Raycast(ray, out RaycastHit hit, interactionRange, interactableLayer))
+            if (Physics.Raycast(ray, out RaycastHit hit, defaultInteractionRange, interactableLayer))
             {
-                if (hit.collider.TryGetComponent<IInteractable>(out var interactable))
+                if (hit.collider.TryGetComponent<InspectableObject>(out var inspectableObj))
                 {
-                    _currentInteractable = interactable;
+                    _currentInteractable = inspectableObj;
+                    _currentActiveRange = inspectableObj.InteractionRange;
+                }
+                else if (hit.collider.TryGetComponent<IInteractable>(out var genericInteractable))
+                {
+                    _currentInteractable = genericInteractable;
                 }
             }
 
@@ -49,7 +57,6 @@ namespace Gidigbo.Interaction
 
         private void HandleInput()
         {
-            // Press 'E' or Left Mouse Click to interact
             bool interactPressed = (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) ||
                                   (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame);
 
@@ -65,7 +72,7 @@ namespace Gidigbo.Interaction
             if (_cam == null) return;
 
             Gizmos.color = _currentInteractable != null ? Color.green : Color.red;
-            Gizmos.DrawRay(_cam.transform.position, _cam.transform.forward * interactionRange);
+            Gizmos.DrawRay(_cam.transform.position, _cam.transform.forward * _currentActiveRange);
         }
     }
 }
