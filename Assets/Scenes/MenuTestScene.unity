@@ -2791,6 +2791,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Gidigbo.Interaction.InspectableObject
   objectName: Inspectable Item
   customInteractionRange: 4
+  inspectionZoomDistance: 1
   targetMeshRenderer: {fileID: 408601259}
   highlightTint: {r: 1, g: 0.92156863, b: 0, a: 1}
 --- !u!65 &408601258
@@ -3276,6 +3277,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Gidigbo.Interaction.InspectableObject
   objectName: Inspectable Item
   customInteractionRange: 4
+  inspectionZoomDistance: 1
   targetMeshRenderer: {fileID: 457496906}
   highlightTint: {r: 1, g: 0.92156863, b: 0, a: 1}
 --- !u!65 &457496905
@@ -5724,6 +5726,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Gidigbo.Interaction.InspectableObject
   objectName: Inspectable Item
   customInteractionRange: 4
+  inspectionZoomDistance: 1
   targetMeshRenderer: {fileID: 643554897}
   highlightTint: {r: 1, g: 0.92156863, b: 0, a: 1}
 --- !u!65 &643554896
@@ -11711,6 +11714,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e83e4ee47f3f8e246bf90cb2f2d2f506, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Gidigbo.Interaction.PlayerInteractor
+  playerController: {fileID: 0}
+  shoulderCamera: {fileID: 0}
   defaultInteractionRange: 8
   interactableLayer:
     serializedVersion: 2
@@ -11764,6 +11769,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Gidigbo.Interaction.InspectableObject
   objectName: Inspectable Item
   customInteractionRange: 4
+  inspectionZoomDistance: 1
   targetMeshRenderer: {fileID: 1946284925}
   highlightTint: {r: 1, g: 0.92156863, b: 0, a: 1}
 --- !u!65 &1946284924
@@ -12377,6 +12383,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Gidigbo.Interaction.InspectableObject
   objectName: Inspectable Item
   customInteractionRange: 4
+  inspectionZoomDistance: 1
   targetMeshRenderer: {fileID: 2012063980}
   highlightTint: {r: 1, g: 0.92156863, b: 0, a: 1}
 --- !u!65 &2012063979

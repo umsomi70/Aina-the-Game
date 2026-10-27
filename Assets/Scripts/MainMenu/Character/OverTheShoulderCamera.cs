@@ -15,7 +15,7 @@ namespace Gidigbo.Player
 
         [Header("Look Sensitivity & Smoothing")]
         public float mouseSensitivity = 2.0f;
-        public float rotationSmoothTime = 0.08f; // Smooths out mouse acceleration/snapping
+        public float rotationSmoothTime = 0.08f;
         public float minYAngle = -30.0f;
         public float maxYAngle = 60.0f;
 
@@ -31,6 +31,11 @@ namespace Gidigbo.Player
         private float _pitchVelocity;
         private Vector3 _currentVelocity;
 
+        // Inspection Zoom Overrides
+        private bool _isInspecting;
+        private Transform _inspectTarget;
+        private float _inspectZoomDistance = 1.2f;
+
         private void Start()
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -45,40 +50,80 @@ namespace Gidigbo.Player
         {
             if (target == null) return;
 
-            // Read Mouse Delta
             Vector2 mouseDelta = Vector2.zero;
             if (Mouse.current != null)
             {
                 mouseDelta = Mouse.current.delta.ReadValue();
             }
 
-            // Accumulate target angles with sensitivity scaling
-            _targetYaw += mouseDelta.x * mouseSensitivity * 0.1f;
-            _targetPitch -= mouseDelta.y * mouseSensitivity * 0.1f;
-            _targetPitch = Mathf.Clamp(_targetPitch, minYAngle, maxYAngle);
+            if (!_isInspecting)
+            {
+                // Normal Orbiting
+                _targetYaw += mouseDelta.x * mouseSensitivity * 0.1f;
+                _targetPitch -= mouseDelta.y * mouseSensitivity * 0.1f;
+                _targetPitch = Mathf.Clamp(_targetPitch, minYAngle, maxYAngle);
+            }
+            else
+            {
+                // Subtle rotation dampening during inspection if mouse moves
+                _targetYaw += mouseDelta.x * mouseSensitivity * 0.02f;
+                _targetPitch -= mouseDelta.y * mouseSensitivity * 0.02f;
+                _targetPitch = Mathf.Clamp(_targetPitch, -15f, 25f);
+            }
 
-            // Smoothly damp the rotation angles to eliminate snapping and stiffness
             _currentYaw = Mathf.SmoothDamp(_currentYaw, _targetYaw, ref _yawVelocity, rotationSmoothTime);
             _currentPitch = Mathf.SmoothDamp(_currentPitch, _targetPitch, ref _pitchVelocity, rotationSmoothTime);
 
-            // Compute Rotation & Desired Position
             Quaternion rotation = Quaternion.Euler(_currentPitch, _currentYaw, 0f);
-            Vector3 focusPoint = target.position + Vector3.up * verticalOffset;
-            Vector3 desiredOffset = rotation * new Vector3(sideOffset, 0f, -distance);
+
+            // Compute focus point (inspect target if active, otherwise player)
+            Vector3 focusPoint;
+            float currentDist;
+            float currentSideOffset;
+            float currentVertOffset;
+
+            if (_isInspecting && _inspectTarget != null)
+            {
+                focusPoint = _inspectTarget.position;
+                currentDist = _inspectZoomDistance;
+                currentSideOffset = 0f; // Center up on the inspected object
+                currentVertOffset = 0.1f;
+            }
+            else
+            {
+                focusPoint = target.position + Vector3.up * verticalOffset;
+                currentDist = distance;
+                currentSideOffset = sideOffset;
+                currentVertOffset = 0f;
+            }
+
+            Vector3 desiredOffset = rotation * new Vector3(currentSideOffset, currentVertOffset, -currentDist);
             Vector3 targetPosition = focusPoint + desiredOffset;
 
             // Obstacle Collision Avoidance
             Vector3 direction = targetPosition - focusPoint;
             float maxDistance = direction.magnitude;
 
-            if (Physics.SphereCast(focusPoint, cameraRadius, direction.normalized, out RaycastHit hit, maxDistance, obstacleLayers))
+            if (!_isInspecting && Physics.SphereCast(focusPoint, cameraRadius, direction.normalized, out RaycastHit hit, maxDistance, obstacleLayers))
             {
                 targetPosition = focusPoint + direction.normalized * (hit.distance - cameraRadius);
             }
 
-            // Smooth position dampening for fluid follow feel
-            transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref _currentVelocity, 0.04f);
+            transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref _currentVelocity, 0.05f);
             transform.rotation = rotation;
+        }
+
+        public void EnterInspectionMode(Transform inspectTarget, float zoomDistance)
+        {
+            _isInspecting = true;
+            _inspectTarget = inspectTarget;
+            _inspectZoomDistance = zoomDistance;
+        }
+
+        public void ExitInspectionMode()
+        {
+            _isInspecting = false;
+            _inspectTarget = null;
         }
 
         public Quaternion GetHorizontalRotation()

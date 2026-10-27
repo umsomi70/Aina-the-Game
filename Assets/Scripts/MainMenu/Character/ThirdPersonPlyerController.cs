@@ -27,6 +27,9 @@ namespace Gidigbo.Player
         private bool _isGrounded;
         private Vector3 _moveInputDirection;
         private bool _isSprinting;
+        private bool _isMovementLocked;
+
+        public bool IsMovementLocked => _isMovementLocked;
 
         private void Awake()
         {
@@ -39,14 +42,30 @@ namespace Gidigbo.Player
 
         private void Update()
         {
-            // Gather input in Update to prevent input polling loss between physics frames
-            GatherInput();
+            if (!_isMovementLocked)
+            {
+                GatherInput();
+            }
+            else
+            {
+                _moveInputDirection = Vector3.zero;
+                _isSprinting = false;
+            }
         }
 
         private void FixedUpdate()
         {
             CheckGrounded();
             HandleMovement();
+        }
+
+        public void SetMovementLocked(bool locked)
+        {
+            _isMovementLocked = locked;
+            if (locked)
+            {
+                _currentVelocity = Vector3.zero;
+            }
         }
 
         private void GatherInput()
@@ -85,25 +104,20 @@ namespace Gidigbo.Player
                 targetSpeed = 0f;
             }
 
-            // Align Movement Direction to Camera Facing Vector
             Quaternion cameraYaw = mainCamera != null ? mainCamera.GetHorizontalRotation() : Quaternion.identity;
             Vector3 moveDirection = cameraYaw * _moveInputDirection;
 
-            // Character Rotation
-            if (moveDirection.magnitude > 0.1f)
+            if (moveDirection.magnitude > 0.1f && !_isMovementLocked)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
             }
 
-            // Horizontal Movement Smoothing
             Vector3 targetVelocity = moveDirection * targetSpeed;
             _currentVelocity = Vector3.Lerp(_currentVelocity, targetVelocity, acceleration * Time.fixedDeltaTime);
 
-            // Gravity Calculation
             _verticalVelocity += gravity * Time.fixedDeltaTime;
 
-            // Apply Move Vector using FixedDeltaTime for smooth physics motion
             Vector3 finalMove = _currentVelocity + Vector3.up * _verticalVelocity;
             _controller.Move(finalMove * Time.fixedDeltaTime);
         }
