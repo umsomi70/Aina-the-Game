@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Gidigbo.UI;
 
 namespace Gidigbo.Interaction
 {
@@ -23,12 +24,13 @@ namespace Gidigbo.Interaction
 
         private int _currentIndex = 0;
         private bool _isSelectorActive = false;
+        private UIManager _uiManager;
 
         protected override void Awake()
         {
             base.Awake();
+            _uiManager = FindFirstObjectByType<UIManager>();
 
-            // Cache original scales and materials for each pin
             for (int i = 0; i < levelPins.Length; i++)
             {
                 if (levelPins[i].pinTransform != null)
@@ -52,12 +54,17 @@ namespace Gidigbo.Interaction
             _isSelectorActive = true;
             _currentIndex = 0;
             UpdatePinVisuals();
+
+            // Trigger Map UI elements
+            string currentLevelName = levelPins.Length > 0 ? levelPins[_currentIndex].levelName : "No Levels";
+            _uiManager?.ShowInspectionUI(true, currentLevelName);
         }
 
         public override void OnInspectExit()
         {
             _isSelectorActive = false;
             ResetPinVisuals();
+            _uiManager?.HideInspectionUI();
         }
 
         public void HandleMapInput()
@@ -83,7 +90,9 @@ namespace Gidigbo.Interaction
             if (oldIndex != _currentIndex)
             {
                 UpdatePinVisuals();
-                Debug.Log($"Selected Level: {levelPins[_currentIndex].levelName}");
+                string activeName = levelPins[_currentIndex].levelName;
+                _uiManager?.UpdateLevelIndicator(activeName);
+                Debug.Log($"Selected Level: {activeName}");
             }
         }
 
@@ -95,7 +104,6 @@ namespace Gidigbo.Interaction
 
                 if (i == _currentIndex)
                 {
-                    // Scale up and tint active pin
                     levelPins[i].pinTransform.localScale = levelPins[i].originalScale * selectedScaleMultiplier;
                     if (levelPins[i].material != null)
                     {
@@ -105,7 +113,6 @@ namespace Gidigbo.Interaction
                 }
                 else
                 {
-                    // Revert unselected pins
                     levelPins[i].pinTransform.localScale = levelPins[i].originalScale;
                     if (levelPins[i].material != null)
                     {

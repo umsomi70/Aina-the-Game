@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Gidigbo.Player;
+using Gidigbo.UI;
 
 namespace Gidigbo.Interaction
 {
@@ -9,6 +10,7 @@ namespace Gidigbo.Interaction
         [Header("References")]
         [SerializeField] private ThirdPersonPlayerController playerController;
         [SerializeField] private OverTheShoulderCamera shoulderCamera;
+        [SerializeField] private UIManager uiManager;
 
         [Header("Default Settings")]
         [SerializeField] private float defaultInteractionRange = 4.0f;
@@ -31,13 +33,14 @@ namespace Gidigbo.Interaction
                 playerController = FindFirstObjectByType<ThirdPersonPlayerController>();
             if (shoulderCamera == null && _cam != null)
                 shoulderCamera = _cam.GetComponent<OverTheShoulderCamera>();
+            if (uiManager == null)
+                uiManager = FindFirstObjectByType<UIManager>();
         }
 
         private void Update()
         {
             HandleInput();
 
-            // Poll map scrolling inputs if currently inspecting a MapLevelSelector
             if (_isInspecting && _inspectedObject is MapLevelSelector mapSelector)
             {
                 mapSelector.HandleMapInput();
@@ -71,7 +74,13 @@ namespace Gidigbo.Interaction
             if (_currentInteractable != _lastInteractable)
             {
                 _lastInteractable?.OnLookExit();
+                uiManager?.HideLookPrompt();
+
                 _currentInteractable?.OnLookEnter();
+                if (_currentInteractable != null)
+                {
+                    uiManager?.ShowLookPrompt(_currentInteractable.GetInteractionPrompt());
+                }
             }
         }
 
@@ -89,9 +98,17 @@ namespace Gidigbo.Interaction
                     _inspectedObject = inspectObj;
                     _isInspecting = true;
 
+                    uiManager?.HideLookPrompt();
                     inspectObj.OnInspectEnter();
+
                     playerController?.SetMovementLocked(true);
                     shoulderCamera?.EnterInspectionMode(inspectObj.Transform, inspectObj.InspectionZoomDistance);
+
+                    // If it's a standard inspectable (not a map), show standard exit UI
+                    if (!(inspectObj is MapLevelSelector))
+                    {
+                        uiManager?.ShowInspectionUI(false);
+                    }
                 }
             }
             else if (_isInspecting)
@@ -110,6 +127,7 @@ namespace Gidigbo.Interaction
             _isInspecting = false;
             _inspectedObject = null;
 
+            uiManager?.HideInspectionUI();
             playerController?.SetMovementLocked(false);
             shoulderCamera?.ExitInspectionMode();
         }
