@@ -7,20 +7,20 @@ namespace Gidigbo.Interaction
         [Header("Interaction Settings")]
         [SerializeField] private string objectName = "Inspectable Item";
         [SerializeField] private float customInteractionRange = 4.0f;
-        [SerializeField] private float inspectionZoomDistance = 1.0f;
+        [SerializeField] private float inspectionZoomDistance = 2.0f;
 
         [Header("Visual Feedback (Highlight)")]
         [SerializeField] private MeshRenderer targetMeshRenderer;
         [SerializeField] private Color highlightTint = Color.yellow;
 
-        private Material _material;
-        private Color _originalColor;
+        protected Material _material;
+        protected Color _originalColor;
 
         public float InteractionRange => customInteractionRange;
         public float InspectionZoomDistance => inspectionZoomDistance;
         public Transform Transform => transform;
 
-        private void Awake()
+        protected virtual void Awake()
         {
             if (targetMeshRenderer == null)
                 targetMeshRenderer = GetComponentInChildren<MeshRenderer>();
@@ -44,7 +44,7 @@ namespace Gidigbo.Interaction
             return $"Inspect {objectName}";
         }
 
-        public void OnLookEnter()
+        public virtual void OnLookEnter()
         {
             if (_material != null)
             {
@@ -54,7 +54,7 @@ namespace Gidigbo.Interaction
             }
         }
 
-        public void OnLookExit()
+        public virtual void OnLookExit()
         {
             if (_material != null)
             {
@@ -63,9 +63,9 @@ namespace Gidigbo.Interaction
             }
         }
 
-        public void Interact()
-        {
-            // Handled via PlayerInteractor state machine toggle
-        }
+        public virtual void OnInspectEnter() { }
+        public virtual void OnInspectExit() { }
+
+        public void Interact() { }
     }
 }

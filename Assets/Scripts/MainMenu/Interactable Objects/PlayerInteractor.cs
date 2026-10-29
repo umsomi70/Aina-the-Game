@@ -37,7 +37,12 @@ namespace Gidigbo.Interaction
         {
             HandleInput();
 
-            if (!_isInspecting)
+            // Poll map scrolling inputs if currently inspecting a MapLevelSelector
+            if (_isInspecting && _inspectedObject is MapLevelSelector mapSelector)
+            {
+                mapSelector.HandleMapInput();
+            }
+            else if (!_isInspecting)
             {
                 CheckForInteractables();
             }
@@ -72,7 +77,6 @@ namespace Gidigbo.Interaction
 
         private void HandleInput()
         {
-            // E key or Right Mouse Button click
             bool actionPressed = (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) ||
                                  (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame);
 
@@ -80,25 +84,29 @@ namespace Gidigbo.Interaction
 
             if (!_isInspecting && _currentInteractable != null)
             {
-                // Enter Inspection Mode
                 if (_currentInteractable is InspectableObject inspectObj)
                 {
                     _inspectedObject = inspectObj;
                     _isInspecting = true;
 
+                    inspectObj.OnInspectEnter();
                     playerController?.SetMovementLocked(true);
                     shoulderCamera?.EnterInspectionMode(inspectObj.Transform, inspectObj.InspectionZoomDistance);
                 }
             }
             else if (_isInspecting)
             {
-                // Exit Inspection Mode
                 ToggleExitInspection();
             }
         }
 
         public void ToggleExitInspection()
         {
+            if (_inspectedObject != null)
+            {
+                _inspectedObject.OnInspectExit();
+            }
+
             _isInspecting = false;
             _inspectedObject = null;
 

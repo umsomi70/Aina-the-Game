@@ -31,10 +31,13 @@ namespace Gidigbo.Player
         private float _pitchVelocity;
         private Vector3 _currentVelocity;
 
-        // Inspection Zoom Overrides
+        // Inspection Zoom Overrides & Scroll Zoom
         private bool _isInspecting;
         private Transform _inspectTarget;
-        private float _inspectZoomDistance = 1.2f;
+        private float _inspectZoomDistance = 2.0f;
+        private float _currentInspectZoom = 2.0f;
+        private float _minInspectZoom = 0.8f;
+        private float _maxInspectZoom = 4.0f;
 
         private void Start()
         {
@@ -54,6 +57,14 @@ namespace Gidigbo.Player
             if (Mouse.current != null)
             {
                 mouseDelta = Mouse.current.delta.ReadValue();
+
+                // Handle Scroll Wheel Zooming during Inspection
+                if (_isInspecting && Mouse.current.scroll.ReadValue().y != 0f)
+                {
+                    float scrollValue = Mouse.current.scroll.ReadValue().y;
+                    float zoomDelta = scrollValue > 0f ? -0.2f : 0.2f;
+                    _currentInspectZoom = Mathf.Clamp(_currentInspectZoom + zoomDelta, _minInspectZoom, _maxInspectZoom);
+                }
             }
 
             if (!_isInspecting)
@@ -65,10 +76,10 @@ namespace Gidigbo.Player
             }
             else
             {
-                // Subtle rotation dampening during inspection if mouse moves
-                _targetYaw += mouseDelta.x * mouseSensitivity * 0.02f;
-                _targetPitch -= mouseDelta.y * mouseSensitivity * 0.02f;
-                _targetPitch = Mathf.Clamp(_targetPitch, -15f, 25f);
+                // Free look around object during inspection
+                _targetYaw += mouseDelta.x * mouseSensitivity * 0.03f;
+                _targetPitch -= mouseDelta.y * mouseSensitivity * 0.03f;
+                _targetPitch = Mathf.Clamp(_targetPitch, -45f, 45f);
             }
 
             _currentYaw = Mathf.SmoothDamp(_currentYaw, _targetYaw, ref _yawVelocity, rotationSmoothTime);
@@ -76,7 +87,7 @@ namespace Gidigbo.Player
 
             Quaternion rotation = Quaternion.Euler(_currentPitch, _currentYaw, 0f);
 
-            // Compute focus point (inspect target if active, otherwise player)
+            // Compute focus point
             Vector3 focusPoint;
             float currentDist;
             float currentSideOffset;
@@ -85,9 +96,9 @@ namespace Gidigbo.Player
             if (_isInspecting && _inspectTarget != null)
             {
                 focusPoint = _inspectTarget.position;
-                currentDist = _inspectZoomDistance;
-                currentSideOffset = 0f; // Center up on the inspected object
-                currentVertOffset = 0.1f;
+                currentDist = _currentInspectZoom;
+                currentSideOffset = 0f;
+                currentVertOffset = 0.0f;
             }
             else
             {
@@ -118,6 +129,7 @@ namespace Gidigbo.Player
             _isInspecting = true;
             _inspectTarget = inspectTarget;
             _inspectZoomDistance = zoomDistance;
+            _currentInspectZoom = zoomDistance;
         }
 
         public void ExitInspectionMode()
