@@ -1,31 +1,36 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using TMPro;
 
 public class Interactor : MonoBehaviour
 {
-    public float range = 3f;
-    public KeyCode interactKey = KeyCode.E;
+    public float range = 2.5f;
     public GameObject promptObject;
     public TextMeshProUGUI promptLabel;
 
     void Update()
     {
-        IInteractable target = null;
+        IInteractable best = null;
+        float bestDist = float.MaxValue;
 
-        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, range))
-            target = hit.collider.GetComponentInParent<IInteractable>();
-
-        if (target != null)
+        var cols = Physics.OverlapSphere(transform.position, range, ~0, QueryTriggerInteraction.Collide);
+        foreach (var col in cols)
         {
-            promptObject.SetActive(true);
-            promptLabel.text = $"Press E to {target.PromptText}";
+            var i = col.GetComponentInParent<IInteractable>();
+            if (i == null) continue;
 
-            if (Input.GetKeyDown(interactKey))
-                target.Interact();
+            float d = Vector3.Distance(transform.position, col.ClosestPoint(transform.position));
+            if (d < bestDist) { bestDist = d; best = i; }
         }
-        else
+
+        bool show = best != null && !CameraController.InputBlocked;
+        if (promptObject != null) promptObject.SetActive(show);
+
+        if (show)
         {
-            promptObject.SetActive(false);
+            if (promptLabel != null) promptLabel.text = $"Press E to {best.PromptText}";
+            if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+                best.Interact();
         }
     }
 }
